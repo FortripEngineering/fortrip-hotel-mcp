@@ -29,9 +29,6 @@
     "type": "git",
     "url": "https://github.com/FortripEngineering/fortrip-mcp.git"
   },
-  "publishConfig": {
-    "provenance": true
-  },
   "bugs": {
     "url": "https://github.com/FortripEngineering/fortrip-mcp/issues"
   },
