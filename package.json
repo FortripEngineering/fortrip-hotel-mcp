@@ -1,0 +1,16 @@
+{
+  "name": "fortrip-hotel-mcp",
+  "version": "0.1.0",
+  "description": "Fortrip hotel search, live rates and booking payment links over MCP stdio",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "bin": { "fortrip-hotel-mcp": "src/index.js" },
+  "scripts": { "start": "node src/index.js", "test": "node --test" },
+  "files": ["src", "guides", "LICENSE", "README.md"],
+  "repository": { "type": "git", "url": "https://github.com/FortripEngineering/fortrip-hotel-mcp.git" },
+  "bugs": { "url": "https://github.com/FortripEngineering/fortrip-hotel-mcp/issues" },
+  "keywords": ["mcp", "hotel", "travel", "fortrip"],
+  "dependencies": { "@modelcontextprotocol/server": "2.3.1", "zod": "^4.0.0" },
+  "devDependencies": { "@modelcontextprotocol/client": "2.3.1" }
+}
