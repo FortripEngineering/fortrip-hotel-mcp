@@ -147,7 +147,9 @@ npm pack --dry-run
 ```
 
 The server is written in TypeScript with strict type checking.
-Run `npm run typecheck` to check types without emitting JavaScript.
+Run `npm run typecheck` to build the server and strictly check the TypeScript tests.
+`npm test` compiles the tests into `.test-build/` and runs them against `dist/`.
+Both output directories are ignored by Git.
 Tests exercise the actual stdio process, tool routing, schema validation,
 credential scoping, API failures and payment-link handling using mock API
 responses. They do not make live bookings. CI runs on Node.js 22 and 24.
