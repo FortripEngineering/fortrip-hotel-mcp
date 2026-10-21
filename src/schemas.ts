@@ -3,9 +3,9 @@ import { z } from 'zod';
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
   const parsed = new Date(value + 'T00:00:00Z');
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-}, 'Expected a real yyyy-MM-dd calendar date');
-const currency = z.enum(['CNY', 'USD']).default('CNY');
-const children = z.array(z.number().int().min(0).max(17)).max(10);
+}, 'Expected a real yyyy-MM-dd calendar date').describe('Calendar date in YYYY-MM-DD format; checkOut must be 1–15 nights after checkIn.');
+const currency = z.enum(['CNY', 'USD']).default('CNY').describe('Currency for displayed prices: CNY or USD. Booking charges the currency returned by create_booking.');
+const children = z.array(z.number().int().min(0).max(17)).max(10).describe('Age in years of each child, 0–17; omit or use [] when no children are travelling.');
 function stay(input: { checkIn: string; checkOut: string }, ctx: z.RefinementCtx) {
   const nights = (Date.parse(input.checkOut) - Date.parse(input.checkIn)) / 86_400_000;
   if (nights < 1 || nights > 15) ctx.addIssue({ code: 'custom', path: ['checkOut'], message: 'Stay must be between 1 and 15 nights.' });
@@ -32,12 +32,12 @@ export const searchSchema = z.object({
 });
 export const hotelSchema = z.object({ hotelId: z.number().int().positive(), includeRooms: z.boolean().optional() }).strict();
 export const ratesSchema = z.object({
-  hotelIds: z.array(z.number().int().positive()).min(1).max(15), checkIn: date, checkOut: date,
-  rooms: z.number().int().min(1).max(9), adults: z.number().int().min(1).max(9).describe('Adults per room'),
-  childrenAges: children.optional(), nationality: z.string().regex(/^[A-Z]{2}$/).optional(), currency,
-  bookableOnly: z.boolean().default(true),
-  boardCodes: z.array(z.enum(['RO', 'BB', 'HB', 'FB', 'BL', 'BD', 'HBBL', 'HBLD', 'AI'])).min(1).optional(),
-  freeCancellation: z.boolean().optional(), maxRoomsPerHotel: z.number().int().min(1).max(200).default(5),
+  hotelIds: z.array(z.number().int().positive()).min(1).max(15).describe('Catalogue hotel IDs returned by search_hotels; compare up to 15 hotels in one call.'), checkIn: date, checkOut: date,
+  rooms: z.number().int().min(1).max(9).describe('Number of rooms requested for this stay, not number of guests.'), adults: z.number().int().min(1).max(9).describe('Adults per room'),
+  childrenAges: children.optional(), nationality: z.string().regex(/^[A-Z]{2}$/).optional().describe('Guest nationality as an uppercase ISO 3166-1 alpha-2 country code, e.g. CN or US; omit when unknown.'), currency,
+  bookableOnly: z.boolean().default(true).describe('True keeps only rates with bookable inventory on every night. False also includes rates with unavailable nights; do not present those as bookable.'),
+  boardCodes: z.array(z.enum(['RO', 'BB', 'HB', 'FB', 'BL', 'BD', 'HBBL', 'HBLD', 'AI'])).min(1).optional().describe('Keep any of these meal plans: RO=room only, BB=breakfast, HB/HBLD=breakfast and dinner, FB=breakfast/lunch/dinner, BL=lunch, BD=dinner, HBBL=breakfast and lunch, AI=all inclusive. Omit for all meal plans; use returned terms for exact inclusions.'),
+  freeCancellation: z.boolean().optional().describe('True keeps rates that can still be cancelled free of charge now. False or omitted applies no cancellation filter; it does not mean non-refundable only. Read each returned deadline and penalty.'), maxRoomsPerHotel: z.number().int().min(1).max(200).default(5).describe('Maximum room types returned per hotel, cheapest first after filtering; default 5. This limits response size, not the rooms being booked.'),
 }).strict().superRefine(stay);
 export const bookingSchema = z.object({
   hotelId: z.number().int().positive(), roomId: z.string().min(1).describe('roomId from get_rates'),
