@@ -1,20 +1,20 @@
 import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { createApi, jsonResult } from './api.js';
+import { type ApiOptions, type JsonObject, createApi, jsonResult } from './api.js';
 import { searchSchema, hotelSchema, ratesSchema, bookingSchema } from './schemas.js';
 
 const guide = readFileSync(new URL('../guides/planning.md', import.meta.url), 'utf8');
 const nextStep = 'Show the user amount, currency and every item in terms (meals, cancellation, confirmation, pay-at-hotel fees), then ask them to confirm. Only after they say yes, give them paymentUrl exactly as returned. Never share the link with anyone else.';
 const readOnly = { readOnlyHint: true, destructiveHint: false, openWorldHint: true };
-const absolute = (value, origin) => typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? origin + value : value;
+const absolute = (value: unknown, origin: string): unknown => typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? origin + value : value;
 
-export function createServer(options = {}) {
+export function createServer(options: ApiOptions = {}) {
   const api = createApi(options);
   const server = new McpServer({ name: 'fortrip-hotel-mcp', version: '0.1.0' }, {
     instructions: 'Use get_planning_guide for complex trips. Search prices are indicative; quote live get_rates results. Create a booking only for a rate selected by the user. Present accepted terms and obtain confirmation before sharing the private payment link. Payment happens on Fortrip/Stripe, never in this server.',
   });
-  const call = async (path, body, booking = false) => {
+  const call = async (path: string, body?: JsonObject, booking = false) => {
     const result = await api.request(path, body);
     const data = result.error || result.data;
     if (booking) {
