@@ -7,7 +7,7 @@
 | Authentication | OAuth sign-in with a Fortrip account |
 | Glama Connector | [Fortrip Hotels](https://glama.ai/mcp/connectors/ai.fortrip/fortrip-hotels) |
 
-The remote service does not require installing this CLI or Node.js. Use a
+The remote service does not require installing the local server or Node.js. Use a
 client that supports Streamable HTTP and MCP OAuth, then complete its browser
 sign-in and authorization flow. CLI device-login tokens (`fth_...`) and
 `FORTRIP_TOKEN` are for the CLI HTTP API and do not authenticate this MCP
@@ -87,4 +87,3 @@ existing bookings.
 Client setup references: [Claude Code](https://code.claude.com/docs/en/mcp),
 [Cursor](https://prod.cursor.com/help/customization/mcp),
 [Codex](https://developers.openai.com/codex/mcp).
-
