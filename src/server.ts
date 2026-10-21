@@ -11,7 +11,7 @@ const absolute = (value: unknown, origin: string): unknown => typeof value === '
 
 export function createServer(options: ApiOptions = {}) {
   const api = createApi(options);
-  const server = new McpServer({ name: 'fortrip-hotel-mcp', version: '0.1.0' }, {
+  const server = new McpServer({ name: 'fortrip-hotel-mcp', version: '0.1.1' }, {
     instructions: 'Use get_planning_guide for complex trips. Search prices are indicative; quote live get_rates results. Create a booking only for a rate selected by the user. Present accepted terms and obtain confirmation before sharing the private payment link. Payment happens on Fortrip/Stripe, never in this server.',
   });
   const call = async (path: string, body?: JsonObject, booking = false) => {
@@ -39,7 +39,7 @@ export function createServer(options: ApiOptions = {}) {
     inputSchema: hotelSchema, annotations: readOnly,
   }, ({ hotelId, includeRooms }) => call(`/api/huizhi/hotels/${hotelId}${includeRooms ? '?include=rooms' : ''}`));
   server.registerTool('get_rates', {
-    title: 'Get live rates', description: 'Live rooms and rate plans for 1–15 hotelIds and a stay of 1–15 nights. Specify rooms and adults per room; provide every child age. Prices in CNY (default) or USD. Returns roomId/ratePlanCode for create_booking and meal/cancellation terms. Defaults to 5 cheapest rooms per hotel. Takes about 15 seconds; query a few hotels per call.',
+    title: 'Get live rates', description: 'Live rooms and rate plans for 1–15 hotelIds and a stay of 1–15 nights. Specify rooms and adults per room; provide every child age. Prices in CNY (default) or USD. Returns roomId/ratePlanCode for create_booking and meal/cancellation terms. Defaults to 5 cheapest rooms per hotel. Takes about 15 seconds; query a few hotels per call. Use search_hotels first to find IDs, get_hotel for static policies/photos, and get_planning_guide for flexible trips. Use this tool to verify availability and quote live prices before booking. Requires Fortrip login; 429 errors include retry guidance.',
     inputSchema: ratesSchema, annotations: readOnly,
   }, input => call('/api/huizhi/rates', input));
   server.registerTool('create_booking', {

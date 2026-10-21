@@ -50,7 +50,7 @@ export function createApi({ env = process.env, fetchImpl = fetch }: ApiOptions =
       try {
         response = await fetchImpl(origin + path, {
           method: body === undefined ? 'GET' : 'POST',
-          headers: { accept: 'application/json', authorization: `Bearer ${token}`, 'user-agent': 'fortrip-hotel-mcp/0.1.0', ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+          headers: { accept: 'application/json', authorization: `Bearer ${token}`, 'user-agent': 'fortrip-hotel-mcp/0.1.1', ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
           ...(body === undefined ? {} : { body: JSON.stringify(body) }),
           redirect: 'manual',
           signal: AbortSignal.timeout(120_000),
