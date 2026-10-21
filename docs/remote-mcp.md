@@ -21,7 +21,7 @@ claude mcp add --transport http fortrip https://fortrip.ai/api/mcp
 
 Run `/mcp` inside Claude Code, select `fortrip`, and follow the
 authentication prompts. For project configuration, merge
-[`examples/claude-code.mcp.json`](../examples/claude-code.mcp.json) into `.mcp.json`.
+[`examples/claude-code.mcp.json`](https://github.com/FortripEngineering/fortrip-mcp/blob/main/examples/claude-code.mcp.json) into `.mcp.json`.
 
 ### Cursor
 
@@ -40,7 +40,7 @@ for your personal configuration:
 
 Restart Cursor if needed, then open its MCP settings and complete the OAuth
 sign-in when prompted. A copy is in
-[`examples/cursor.mcp.json`](../examples/cursor.mcp.json).
+[`examples/cursor.mcp.json`](https://github.com/FortripEngineering/fortrip-mcp/blob/main/examples/cursor.mcp.json).
 
 ### Codex
 
@@ -49,7 +49,7 @@ codex mcp add fortrip --url https://fortrip.ai/api/mcp
 codex mcp login fortrip
 ```
 
-Alternatively, merge [`examples/codex.config.toml`](../examples/codex.config.toml)
+Alternatively, merge [`examples/codex.config.toml`](https://github.com/FortripEngineering/fortrip-mcp/blob/main/examples/codex.config.toml)
 into `~/.codex/config.toml` or your project's `.codex/config.toml`, then run
 the login command. Use `codex mcp list` or `/mcp` in Codex to check the server.
 

@@ -55,7 +55,9 @@ claude mcp add --transport stdio fortrip-local -- node /absolute/path/to/fortrip
 ```
 
 This repository is runnable from source. An npm release of `fortrip-mcp`
-has not been published; use the checkout instructions above.
+has not been published; use the checkout instructions above. The first npm
+release will be published manually; publishing from CI with npm provenance
+can come later.
 
 ## Tools
 
@@ -140,11 +142,14 @@ credentials read-only into the container:
 ```sh
 docker build -t fortrip-mcp .
 docker run --rm -i \
-  -v "$HOME/.config/fortrip:/config/fortrip:ro" \
+  --mount "type=bind,src=$HOME/.config/fortrip,dst=/config/fortrip,readonly" \
   -e XDG_CONFIG_HOME=/config \
   fortrip-mcp
 ```
 
+Sign in before the container first starts, including when an MCP client
+launches it: `--mount` refuses to start while the folder is missing, whereas
+`-v` would create it owned by root and break a later `npx -y fortrip login`.
 If you set `XDG_CONFIG_HOME` on the host, mount `$XDG_CONFIG_HOME/fortrip`
 instead. The credentials file is readable only by its owner: on Linux, if your
 user ID is not 1000 (the image's `node` user), add `--user "$(id -u):$(id -g)"`.
