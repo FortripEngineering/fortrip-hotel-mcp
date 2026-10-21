@@ -198,13 +198,29 @@ test('tool descriptions state the meal codes, per-room occupancy and search limi
   const tool = (name: string) => tools.find(x => x.name === name);
   const describe = (name: string, key: string) => z.object({ description: z.string() }).parse(tool(name)?.inputSchema.properties?.[key]).description;
   const meals = describe('get_rates', 'boardCodes');
-  for (const pair of ['RO=room only', 'BB=breakfast,', 'HB=breakfast + dinner,', 'FB=breakfast + lunch + dinner,', 'BL=lunch,', 'BD=dinner,', 'HBBL=breakfast + lunch,', 'HBLD=lunch + dinner,', 'AI=all inclusive', 'boardCount']) assert.ok(meals.includes(pair), pair);
+  for (const pair of ['RO=room only', 'BB=breakfast,', 'HB=breakfast + dinner,', 'FB=breakfast + lunch + dinner,', 'BL=lunch,', 'BD=dinner,', 'HBBL=breakfast + lunch,', 'HBLD=lunch + dinner,', 'AI=all inclusive']) assert.ok(meals.includes(pair), pair);
+  const boardCount = "boardCount is how many guests per room the meal plan covers: fewer than adults per room means the meals don't cover everyone (BB with boardCount 1 for 2 adults is breakfast for 1 of 2).";
+  assert.ok(meals.includes(boardCount), meals);
+  assert.ok(tool('get_rates')?.description?.includes(boardCount), tool('get_rates')?.description);
+  assert.doesNotMatch(meals, /portion/);
   for (const name of ['get_rates', 'create_booking']) {
     assert.match(describe(name, 'rooms'), /2 rooms for 4 adults is rooms 2, adults 2/);
     assert.match(describe(name, 'adults'), /per room/);
     assert.match(describe(name, 'childrenAges'), /every room/);
   }
   assert.match(tool('search_hotels')?.description ?? '', /more than 30,000 hotels are refused with 422; narrow them/);
+  const booking = tool('create_booking')?.description ?? '';
+  assert.match(booking, /from get_rates, with the same rooms, adults and childrenAges/);
+  assert.match(booking, /Can take up to about a minute; if the call times out, call it again with the same details — it resumes the same order\./);
+  // Only the server instructions mention the guide, and only to say what it returns.
+  assert.deepEqual(tools.filter(x => x.name !== 'get_planning_guide' && JSON.stringify(x).includes('get_planning_guide')).map(x => x.name), []);
+  assert.match(tool('get_planning_guide')?.description ?? '', /^Returns Fortrip's planning guide for /);
+  const instructions = client.getInstructions() ?? '';
+  assert.match(instructions, /get_planning_guide returns Fortrip's guidance for flexible dates, budgets, split stays, several destinations or "find the best" requests\./);
+  assert.doesNotMatch(instructions, /call get_planning_guide/);
+  assert.match(instructions, /Pass create_booking the same occupancy \(rooms, adults per room, childrenAges\) as the get_rates call you're booking\./);
+  assert.match(instructions, /\(fx says which; null means no conversion\)/);
+  assert.match(instructions, /the Stripe page may show the user's local currency at Stripe's rate/);
 });
 
 test('unknown keys: create_booking and search reject them, get_hotel ignores them like the hosted server', async t => {
@@ -212,11 +228,33 @@ test('unknown keys: create_booking and search reject them, get_hotel ignores the
   const client = await connect(t, { env: { FORTRIP_TOKEN: 'fth_test' }, fetchImpl: async (url, options) => { requests.push(new Request(url, options)); return success({}); } });
   const booking = await client.callTool({ name: 'create_booking', arguments: { ...bookingArgs, children: [5] } });
   assert.equal(booking.isError, true);
-  assert.match(firstText(booking), /children/);
+  assert.match(firstText(booking), /Unknown argument\(s\): children/);
   assert.equal((await client.callTool({ name: 'search_hotels', arguments: { query: 'Tokyo', ...dates, stars: 4 } })).isError, true);
   assert.equal(requests.length, 0);
   assert.equal((await client.callTool({ name: 'get_hotel', arguments: { hotelId: 1, include: 'rooms' } })).isError, undefined);
   assert.deepEqual(requests.map(x => x.url), ['https://fortrip.ai/api/huizhi/hotels/1']);
+});
+
+test('create_booking accepts what the hosted server accepts: blank contactEmail and a numeric-string roomNo', async t => {
+  const requests: Request[] = [];
+  const client = await connect(t, { env: { FORTRIP_TOKEN: 'fth_test' }, fetchImpl: async (url, options) => { requests.push(new Request(url, options)); return success({ paymentUrl: 'https://fortrip.ai/booking-status?session_id=cs_test_a1' }); } });
+  const sent = async (args: JsonObject) => {
+    const result = await client.callTool({ name: 'create_booking', arguments: { ...bookingArgs, ...args } });
+    assert.equal(result.isError, undefined, firstText(result));
+    return z.object({ contactEmail: z.string().optional(), guests: z.array(z.object({ roomNo: z.number() })) }).parse(await requests[requests.length - 1].json());
+  };
+  assert.equal((await sent({ contactEmail: '' })).contactEmail, '');
+  assert.equal((await sent({ contactEmail: '   ' })).contactEmail, '');
+  assert.equal((await sent({ contactEmail: ' guest@example.com ' })).contactEmail, 'guest@example.com');
+  assert.equal((await sent({ guests: [{ firstName: 'Test', lastName: 'Guest', roomNo: '1' }] })).guests[0].roomNo, 1);
+  const before = requests.length;
+  const badEmail = await client.callTool({ name: 'create_booking', arguments: { ...bookingArgs, contactEmail: 'not-an-email' } });
+  assert.equal(badEmail.isError, true);
+  assert.match(firstText(badEmail), /contactEmail must be an email address/);
+  for (const roomNo of ['one', '0', 9]) {
+    assert.equal((await client.callTool({ name: 'create_booking', arguments: { ...bookingArgs, guests: [{ firstName: 'Test', lastName: 'Guest', roomNo }] } })).isError, true, String(roomNo));
+  }
+  assert.equal(requests.length, before);
 });
 
 test('login hints address the user and never ask for a token', async t => {

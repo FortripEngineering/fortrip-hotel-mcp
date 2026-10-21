@@ -98,15 +98,15 @@ conditions shown at checkout.
 
 | Variable | Purpose |
 | --- | --- |
-| `FORTRIP_TOKEN` | CI only: a CLI access token (`fth_…`), used instead of saved credentials. Use `npx -y fortrip login` everywhere else. |
+| `FORTRIP_TOKEN` | CI only: a CLI access token (`fth_…`), used instead of saved credentials. Use `npx -y fortrip login` everywhere else. CLI tokens stop working after 90 days without use: sign in again, or issue a new token for CI. |
 | `XDG_CONFIG_HOME` | Optional configuration root; otherwise `~/.config` is used. |
 | `FORTRIP_API_URL` | Optional API origin; defaults to `https://fortrip.ai`. HTTPS required except localhost development. |
 
 Saved credentials are read from `$XDG_CONFIG_HOME/fortrip/credentials.json`
 (normally `~/.config/fortrip/credentials.json`) and selected by API origin.
 They are re-read on each call, so logging in again does not require a restart.
-Missing, revoked or invalid credentials produce a tool error asking the user
-to sign in again. Do not commit tokens. If you set an explicit token, it will
+Missing, revoked or invalid credentials (including tokens unused for 90 days)
+produce a tool error asking the user to sign in again. Do not commit tokens. If you set an explicit token, it will
 be sent to the configured API origin; only configure an origin you trust.
 
 The server sends the tool's hotel/traveller inputs and bearer token to Fortrip
@@ -121,7 +121,7 @@ This repository has its own code, tests and release cycle. It implements MCP
 over local stdio and calls Fortrip's existing authenticated hotel HTTP APIs.
 It is not a second booking backend and does not run the Fortrip website.
 
-The hosted MCP at `https://fortrip.ai/api/mcp` continues to use Clerk OAuth.
+The hosted MCP at `https://fortrip.ai/api/mcp` continues to use OAuth.
 Use it directly in clients that support remote OAuth MCP; see the
 [hosted MCP setup guide](docs/remote-mcp.md) for configuration examples. CLI tokens cannot
 be used as credentials for that hosted MCP endpoint.
