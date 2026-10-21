@@ -1,4 +1,4 @@
-# Fortrip Hotel MCP
+# Fortrip MCP
 
 An open-source, locally runnable MCP server for hotel search, live room rates,
 hotel details and booking payment links through [Fortrip](https://fortrip.ai).
@@ -9,8 +9,8 @@ It uses stdio and works with MCP clients that launch local commands.
 Requires Node.js 22 or newer, npm, and a Fortrip account for hotel API calls.
 
 ```sh
-git clone https://github.com/FortripEngineering/fortrip-hotel-mcp.git
-cd fortrip-hotel-mcp
+git clone https://github.com/FortripEngineering/fortrip-mcp.git
+cd fortrip-mcp
 npm ci
 npm run build
 npx -y fortrip login
@@ -26,9 +26,9 @@ Configure your MCP client using the **absolute** path to this checkout:
 ```json
 {
   "mcpServers": {
-    "fortrip-hotels-local": {
+    "fortrip-local": {
       "command": "node",
-      "args": ["/absolute/path/to/fortrip-hotel-mcp/dist/index.js"]
+      "args": ["/absolute/path/to/fortrip-mcp/dist/index.js"]
     }
   }
 }
@@ -42,18 +42,18 @@ alone does not open a chat interface.
 For Codex, add this to `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.fortrip-hotels-local]
+[mcp_servers.fortrip-local]
 command = "node"
-args = ["/absolute/path/to/fortrip-hotel-mcp/dist/index.js"]
+args = ["/absolute/path/to/fortrip-mcp/dist/index.js"]
 ```
 
 For Claude Code:
 
 ```sh
-claude mcp add --transport stdio fortrip-hotels-local -- node /absolute/path/to/fortrip-hotel-mcp/dist/index.js
+claude mcp add --transport stdio fortrip-local -- node /absolute/path/to/fortrip-mcp/dist/index.js
 ```
 
-This repository is runnable from source. An npm release of `fortrip-hotel-mcp`
+This repository is runnable from source. An npm release of `fortrip-mcp`
 has not been published; use the checkout instructions above.
 
 ## Tools
@@ -128,8 +128,8 @@ depends on the account used to log in.
 ## Docker
 
 ```sh
-docker build -t fortrip-hotel-mcp .
-docker run --rm -i -e FORTRIP_TOKEN fortrip-hotel-mcp
+docker build -t fortrip-mcp .
+docker run --rm -i -e FORTRIP_TOKEN fortrip-mcp
 ```
 
 Set `FORTRIP_TOKEN` in the launching environment first. Do not put it in the
@@ -160,7 +160,7 @@ update schemas, descriptions and tests here together. Business rules and
 supplier integrations remain on the backend.
 
 Report bugs and request help through
-[GitHub Issues](https://github.com/FortripEngineering/fortrip-hotel-mcp/issues).
+[GitHub Issues](https://github.com/FortripEngineering/fortrip-mcp/issues).
 Never include access tokens, private payment URLs, passport details or other
 traveller information in a public issue.
 

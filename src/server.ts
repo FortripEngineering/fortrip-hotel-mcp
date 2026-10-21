@@ -11,7 +11,7 @@ const absolute = (value: unknown, origin: string): unknown => typeof value === '
 
 export function createServer(options: ApiOptions = {}) {
   const api = createApi(options);
-  const server = new McpServer({ name: 'fortrip-hotel-mcp', version: '0.1.1' }, {
+  const server = new McpServer({ name: 'fortrip-mcp', version: '0.1.1' }, {
     instructions: 'Use get_planning_guide for complex trips. Search prices are indicative; quote live get_rates results. Create a booking only for a rate selected by the user. Present accepted terms and obtain confirmation before sharing the private payment link. Payment happens on Fortrip/Stripe, never in this server.',
   });
   const call = async (path: string, body?: JsonObject, booking = false) => {

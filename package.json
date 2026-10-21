@@ -1,5 +1,5 @@
 {
-  "name": "fortrip-hotel-mcp",
+  "name": "fortrip-mcp",
   "version": "0.1.1",
   "description": "Fortrip hotel search, live rates and booking payment links over MCP stdio",
   "type": "module",
@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "bin": {
-    "fortrip-hotel-mcp": "dist/index.js"
+    "fortrip-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -27,10 +27,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/FortripEngineering/fortrip-hotel-mcp.git"
+    "url": "https://github.com/FortripEngineering/fortrip-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/FortripEngineering/fortrip-hotel-mcp/issues"
+    "url": "https://github.com/FortripEngineering/fortrip-mcp/issues"
   },
   "keywords": [
     "mcp",

@@ -5,7 +5,7 @@
 | Endpoint | `https://fortrip.ai/api/mcp` |
 | Transport | Streamable HTTP |
 | Authentication | OAuth sign-in with a Fortrip account |
-| Glama Connector | [Fortrip Hotels](https://glama.ai/mcp/connectors/ai.fortrip/fortrip-hotels) |
+| Glama Connector | [Fortrip](https://glama.ai/mcp/connectors/ai.fortrip/fortrip-hotels) |
 
 The remote service does not require installing the local server or Node.js. Use a
 client that supports Streamable HTTP and MCP OAuth, then complete its browser
@@ -16,10 +16,10 @@ endpoint. There is currently no `fortrip mcp` stdio subcommand.
 ### Claude Code
 
 ```bash
-claude mcp add --transport http fortrip-hotels https://fortrip.ai/api/mcp
+claude mcp add --transport http fortrip https://fortrip.ai/api/mcp
 ```
 
-Run `/mcp` inside Claude Code, select `fortrip-hotels`, and follow the
+Run `/mcp` inside Claude Code, select `fortrip`, and follow the
 authentication prompts. For project configuration, merge
 [`examples/claude-code.mcp.json`](../examples/claude-code.mcp.json) into `.mcp.json`.
 
@@ -31,7 +31,7 @@ for your personal configuration:
 ```json
 {
   "mcpServers": {
-    "fortrip-hotels": {
+    "fortrip": {
       "url": "https://fortrip.ai/api/mcp"
     }
   }
@@ -45,8 +45,8 @@ sign-in when prompted. A copy is in
 ### Codex
 
 ```bash
-codex mcp add fortrip-hotels --url https://fortrip.ai/api/mcp
-codex mcp login fortrip-hotels
+codex mcp add fortrip --url https://fortrip.ai/api/mcp
+codex mcp login fortrip
 ```
 
 Alternatively, merge [`examples/codex.config.toml`](../examples/codex.config.toml)
@@ -80,7 +80,7 @@ existing bookings.
   your client rather than copying a CLI token into MCP headers.
 - If OAuth registration or the callback fails, check your client's MCP logs
   and report the client name, version and error at
-  [GitHub Issues](https://github.com/FortripEngineering/fortrip-hotel-mcp/issues).
+  [GitHub Issues](https://github.com/FortripEngineering/fortrip-mcp/issues).
   Do not include tokens, guest details or payment links.
 - If your client cannot perform MCP OAuth, use the [local MCP server](../README.md) or [Fortrip CLI](https://github.com/FortripEngineering/fortrip-cli).
 
