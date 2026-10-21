@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
-import { createServer } from '../src/server.js';
-import { apiOrigin, resolveToken } from '../src/api.js';
+import { createServer } from '../dist/server.js';
+import { apiOrigin, resolveToken } from '../dist/api.js';
 
 async function connect(t, options) {
   const server = createServer(options);
@@ -28,7 +28,7 @@ const success = data => new Response(JSON.stringify({ success: true, data }), { 
 test('stdio process lists five tools and serves guide without credentials', async t => {
   const config = await temp(t);
   const client = new Client({ name: 'stdio-test', version: '1.0.0' });
-  await client.connect(new StdioClientTransport({ command: process.execPath, args: ['src/index.js'], env: { XDG_CONFIG_HOME: config, FORTRIP_TOKEN: '' }, stderr: 'pipe' }));
+  await client.connect(new StdioClientTransport({ command: process.execPath, args: ['dist/index.js'], env: { XDG_CONFIG_HOME: config, FORTRIP_TOKEN: '' }, stderr: 'pipe' }));
   t.after(() => client.close());
   assert.deepEqual((await client.listTools()).tools.map(x => x.name).sort(), ['create_booking', 'get_hotel', 'get_planning_guide', 'get_rates', 'search_hotels']);
   assert.match((await client.callTool({ name: 'get_planning_guide', arguments: {} })).content[0].text, /live rate/);

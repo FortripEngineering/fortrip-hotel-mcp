@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "fortrip-hotels": {
+      "url": "https://fortrip.ai/api/mcp"
+    }
+  }
+}

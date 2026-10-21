@@ -12,6 +12,7 @@ Requires Node.js 22 or newer, npm, and a Fortrip account for hotel API calls.
 git clone https://github.com/FortripEngineering/fortrip-hotel-mcp.git
 cd fortrip-hotel-mcp
 npm ci
+npm run build
 npx -y fortrip login
 ```
 
@@ -27,7 +28,7 @@ Configure your MCP client using the **absolute** path to this checkout:
   "mcpServers": {
     "fortrip-hotels-local": {
       "command": "node",
-      "args": ["/absolute/path/to/fortrip-hotel-mcp/src/index.js"]
+      "args": ["/absolute/path/to/fortrip-hotel-mcp/dist/index.js"]
     }
   }
 }
@@ -43,13 +44,13 @@ For Codex, add this to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.fortrip-hotels-local]
 command = "node"
-args = ["/absolute/path/to/fortrip-hotel-mcp/src/index.js"]
+args = ["/absolute/path/to/fortrip-hotel-mcp/dist/index.js"]
 ```
 
 For Claude Code:
 
 ```sh
-claude mcp add --transport stdio fortrip-hotels-local -- node /absolute/path/to/fortrip-hotel-mcp/src/index.js
+claude mcp add --transport stdio fortrip-hotels-local -- node /absolute/path/to/fortrip-hotel-mcp/dist/index.js
 ```
 
 This repository is runnable from source. An npm release of `fortrip-hotel-mcp`
@@ -112,7 +113,8 @@ over local stdio and calls Fortrip's existing authenticated hotel HTTP APIs.
 It is not a second booking backend and does not run the Fortrip website.
 
 The hosted MCP at `https://fortrip.ai/api/mcp` continues to use Clerk OAuth.
-Use it directly in clients that support remote OAuth MCP. CLI tokens cannot
+Use it directly in clients that support remote OAuth MCP; see the
+[hosted MCP setup guide](docs/remote-mcp.md) for configuration examples. CLI tokens cannot
 be used as credentials for that hosted MCP endpoint.
 
 - **This repo:** runnable local MCP server, intended for Glama's Server directory.
@@ -139,10 +141,13 @@ still work, while hotel API calls explain how to log in.
 
 ```sh
 npm ci
+npm run build
 npm test
 npm pack --dry-run
 ```
 
+The server is written in TypeScript with strict type checking.
+Run `npm run typecheck` to check types without emitting JavaScript.
 Tests exercise the actual stdio process, tool routing, schema validation,
 credential scoping, API failures and payment-link handling using mock API
 responses. They do not make live bookings. CI runs on Node.js 22 and 24.

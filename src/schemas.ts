@@ -6,7 +6,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
 }, 'Expected a real yyyy-MM-dd calendar date');
 const currency = z.enum(['CNY', 'USD']).default('CNY');
 const children = z.array(z.number().int().min(0).max(17)).max(10);
-function stay(input, ctx) {
+function stay(input: { checkIn: string; checkOut: string }, ctx: z.RefinementCtx) {
   const nights = (Date.parse(input.checkOut) - Date.parse(input.checkIn)) / 86_400_000;
   if (nights < 1 || nights > 15) ctx.addIssue({ code: 'custom', path: ['checkOut'], message: 'Stay must be between 1 and 15 nights.' });
 }
@@ -24,7 +24,7 @@ export const searchSchema = z.object({
   stay(input, ctx);
   if (!input.query && !input.cityCode && !input.near) ctx.addIssue({ code: 'custom', path: ['query'], message: 'Provide query, cityCode or near.' });
   if (input.sortBy === 'distance' && !input.near) ctx.addIssue({ code: 'custom', path: ['sortBy'], message: 'distance requires near.' });
-  for (const [min, max] of [['starMin', 'starMax'], ['priceMin', 'priceMax']]) {
+  for (const [min, max] of [['starMin', 'starMax'], ['priceMin', 'priceMax']] as const) {
     if (input[min] !== undefined && input[max] !== undefined && input[min] > input[max]) ctx.addIssue({ code: 'custom', path: [max], message: `${max} must be at least ${min}.` });
   }
   const earliest = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);

@@ -4,3 +4,4 @@ test
 .env*
 credentials.json
 *.tgz
+dist
