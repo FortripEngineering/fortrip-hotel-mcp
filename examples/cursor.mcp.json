@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "fortrip-hotels": {
+    "fortrip": {
       "url": "https://fortrip.ai/api/mcp"
     }
   }
