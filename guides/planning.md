@@ -2,13 +2,17 @@
 
 Read this when the request is more than one hotel for fixed dates: flexible
 dates, a budget, split stays, several destinations, or "find me the best".
-Use the MCP tools below to collect evidence and compare options.
+The server instructions (call order, confirming terms before giving
+paymentUrl) still apply; this covers what to ask, how to compare and how to
+present.
 
 ## What to collect
 
-Keep track of: dates (or the flexible window), nights, destination(s), guests
-and rooms, room constraints (beds, connecting rooms, accessibility), budget,
-and what the user said matters most (cheapest, most flexible, closest to X).
+Keep track of: dates (or the flexible window), nights, destination(s), rooms
+and guests per room, room constraints (beds, connecting rooms, accessibility),
+budget, and what the user said matters most (cheapest, most flexible, closest
+to X). `adults` and `childrenAges` apply to every room: two rooms for four
+adults is `rooms: 2, adults: 2`.
 
 Ask only for what changes which hotels qualify or how they rank. If children
 come along, ask each child's age; `get_rates` and `create_booking` need it. Don't ask for
@@ -48,5 +52,6 @@ separate payment link.
   request needs more hotels or date combinations than a few calls can cover,
   narrow it with the user, or present the result as a comparison of the
   hotels you priced, not the best overall.
-- Urgency is not consent: create a payment link only after the user picked a
-  rate and confirmed its terms.
+- Urgency is not consent: call `create_booking` only for a rate the user
+  picked, and give them paymentUrl only after they have seen its amount,
+  currency, stay and terms and confirmed.

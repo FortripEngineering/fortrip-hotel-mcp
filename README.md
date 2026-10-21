@@ -18,8 +18,9 @@ npx -y fortrip login
 
 The login command belongs to the separately maintained
 [Fortrip CLI](https://github.com/FortripEngineering/fortrip-cli).
-Complete its browser login. This server reads the resulting credentials; it
-does not modify them. You can instead provide a CLI token with `FORTRIP_TOKEN`.
+Run it once in a terminal and approve the sign-in in your browser. This server
+reads the saved credentials on each call; it does not modify them. Never paste
+a token into a chat or an MCP configuration file.
 
 Configure your MCP client using the **absolute** path to this checkout:
 
@@ -72,33 +73,39 @@ Example prompts:
 - “Compare three hotels near this location with breakfast and free cancellation.”
 - “Use the room I selected to prepare a payment link, and show me all accepted terms first.”
 
-Search prices are indicative; availability and quotes come from `get_rates`.
-Rooms and adults per room are separate inputs. Provide each child's age.
-Rates default to CNY and also support USD. `get_rates` defaults to five rooms
-per hotel and can take about 15 seconds.
+Search prices are indicative minimums; availability and quotes come from `get_rates`.
+`adults` and `childrenAges` are per room and the same for every room: two rooms
+for four adults is `rooms: 2, adults: 2`. Provide each child's age. Up to 8
+rooms, and up to 8 adults and 8 children per room.
+Rates default to CNY and also support USD; `create_booking` charges the amount
+and currency it returns (currently USD). `get_rates` defaults to the five
+cheapest room types per hotel and can take about 15 seconds.
 
 `create_booking` creates an order but does not charge a card. It returns a
 Fortrip page that shows booking terms and continues to Stripe. The assistant
-must show amount, currency, meals, cancellation, confirmation and any fees,
-then obtain confirmation before sharing the link. Links are private; do not
-post them in issues or logs. Cancellation and modification are not supported
-by this server. API access needs a Fortrip account, and hotel purchases have
-the prices and conditions shown at checkout.
+must show amount, currency, the stay, meals, cancellation, confirmation and any
+fees, then obtain confirmation before sharing the link. Card details are
+entered only on the payment page, never in chat. Links are private; do not
+post them in issues or logs. This server does not cancel or modify bookings:
+for changes, cancellations, refunds or booking problems, email
+info@fortrip.ai with the order link (`orderUrl`), not the payment link. API
+access needs a Fortrip account, and hotel purchases have the prices and
+conditions shown at checkout.
 
 ## Authentication and configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `FORTRIP_TOKEN` | Optional CLI access token (`fth_…`), preferred over saved credentials. |
+| `FORTRIP_TOKEN` | CI only: a CLI access token (`fth_…`), used instead of saved credentials. Use `npx -y fortrip login` everywhere else. |
 | `XDG_CONFIG_HOME` | Optional configuration root; otherwise `~/.config` is used. |
 | `FORTRIP_API_URL` | Optional API origin; defaults to `https://fortrip.ai`. HTTPS required except localhost development. |
 
 Saved credentials are read from `$XDG_CONFIG_HOME/fortrip/credentials.json`
 (normally `~/.config/fortrip/credentials.json`) and selected by API origin.
 They are re-read on each call, so logging in again does not require a restart.
-Expired or missing credentials produce a tool error with login instructions.
-Do not commit tokens. If you set an explicit token, it will be sent to the
-configured API origin; only configure an origin you trust.
+Missing, revoked or invalid credentials produce a tool error asking the user
+to sign in again. Do not commit tokens. If you set an explicit token, it will
+be sent to the configured API origin; only configure an origin you trust.
 
 The server sends the tool's hotel/traveller inputs and bearer token to Fortrip
 over HTTPS. It stores no bookings or traveller data locally. Fortrip performs
@@ -127,15 +134,24 @@ depends on the account used to log in.
 
 ## Docker
 
+Sign in on the host first with `npx -y fortrip login`, then mount the saved
+credentials read-only into the container:
+
 ```sh
 docker build -t fortrip-mcp .
-docker run --rm -i -e FORTRIP_TOKEN fortrip-mcp
+docker run --rm -i \
+  -v "$HOME/.config/fortrip:/config/fortrip:ro" \
+  -e XDG_CONFIG_HOME=/config \
+  fortrip-mcp
 ```
 
-Set `FORTRIP_TOKEN` in the launching environment first. Do not put it in the
+If you set `XDG_CONFIG_HOME` on the host, mount `$XDG_CONFIG_HOME/fortrip`
+instead. The credentials file is readable only by its owner: on Linux, if your
+user ID is not 1000 (the image's `node` user), add `--user "$(id -u):$(id -g)"`.
+In CI, pass `-e FORTRIP_TOKEN` instead of the mount. Never put a token in the
 Dockerfile or image. The image runs as an unprivileged user; no port is needed.
 Without credentials, initialization, tool discovery and the planning guide
-still work, while hotel API calls explain how to log in.
+still work, while hotel API calls explain how to sign in.
 
 ## Development and support
 

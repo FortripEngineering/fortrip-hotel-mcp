@@ -67,12 +67,15 @@ Example request: "Find hotels in Bangkok for November 10–12, 2026, for two
 adults. Compare live rates including breakfast and free cancellation."
 
 For flexible plans, call `get_planning_guide` first. Search prices are
-indicative; use `get_rates` for live quotes. After the user selects a rate,
-collect the required guest details and call `create_booking`. Show the
-returned amount, currency and booking terms, and get the user's confirmation
-before sharing the payment link. The user completes payment in their browser;
-the MCP tool does not charge a card. These tools do not modify or cancel
-existing bookings.
+indicative minimums; use `get_rates` for live quotes. `adults` and
+`childrenAges` are per room and the same for every room. After the user
+selects a rate, collect the required guest details and call `create_booking`.
+Show the returned amount, currency, stay and booking terms, and get the
+user's confirmation before sharing the payment link. The user completes
+payment in their browser; the MCP tool does not charge a card and never needs
+card details. These tools do not modify or cancel existing bookings: for
+changes, cancellations, refunds or booking problems, email info@fortrip.ai
+with the order link (`orderUrl`).
 
 ### Troubleshooting and support
 
