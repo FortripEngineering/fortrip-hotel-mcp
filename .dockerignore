@@ -5,3 +5,4 @@ test
 credentials.json
 *.tgz
 dist
+.test-build

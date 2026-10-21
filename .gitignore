@@ -5,3 +5,4 @@ node_modules/
 credentials.json
 .DS_Store
 dist/
+.test-build/
