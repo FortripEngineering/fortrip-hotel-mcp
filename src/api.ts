@@ -10,7 +10,8 @@ type ApiResponse = { data: JsonObject; error?: never } | { error: JsonObject; da
 const isObject = (value: unknown): value is JsonObject => value !== null && typeof value === 'object' && !Array.isArray(value);
 export const pkg: { name: string; version: string } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const loginHint = 'Ask the user to run `npx -y fortrip login` in a terminal and approve the sign-in in the browser, then retry. If this server runs in Docker, they sign in on the host and mount ~/.config/fortrip read-only into the container (see the fortrip-mcp README). Never ask the user to paste a token.';
-const envTokenHint = 'The FORTRIP_TOKEN set for this server was rejected; whoever configured the server must replace or remove it. Never ask the user to paste a token.';
+const envTokenHint = 'The FORTRIP_TOKEN set for this server was rejected and overrides the saved login. Whoever configured the server must remove it (in CI, replace it); then ask the user to run `npx -y fortrip login` in a terminal and approve the sign-in in the browser. Never ask the user to paste a token.';
+const permissionHint = 'Tell the user this server cannot read their saved Fortrip login because of file permissions, so signing in again will not help. In Docker, add --user "$(id -u):$(id -g)" to docker run so the container user owns the file; otherwise run this server as the user who ran `npx -y fortrip login`. Never ask the user to paste a token.';
 
 export function apiOrigin(env = process.env) {
   let url: URL;
@@ -33,8 +34,9 @@ export async function resolveToken(origin: string, env: NodeJS.ProcessEnv = proc
     const token = isObject(entry) ? entry.accessToken : undefined;
     return typeof token === 'string' && token.trim() ? token.trim() : undefined;
   } catch (error) {
-    if (isObject(error) && error.code === 'ENOENT') return undefined;
-    throw new Error(`Cannot read the saved Fortrip login${isObject(error) && typeof error.code === 'string' ? ` (${error.code})` : ''}.`);
+    const code = isObject(error) && typeof error.code === 'string' ? error.code : undefined;
+    if (code === 'ENOENT') return undefined;
+    throw Object.assign(new Error(`Cannot read the saved Fortrip login${code ? ` (${code})` : ''}.`), { code });
   }
 }
 
@@ -53,7 +55,10 @@ export function createApi({ env = process.env, fetchImpl = fetch }: ApiOptions =
       if (configError) return { error: { error: configError } };
       let token;
       try { token = await resolveToken(origin, env); }
-      catch (error) { return { error: { error: error instanceof Error ? error.message : 'Cannot read the saved Fortrip login.', nextStep: loginHint } }; }
+      catch (error) {
+        const denied = isObject(error) && (error.code === 'EACCES' || error.code === 'EPERM');
+        return { error: { error: error instanceof Error ? error.message : 'Cannot read the saved Fortrip login.', nextStep: denied ? permissionHint : loginHint } };
+      }
       if (!token) return { error: { status: 401, error: 'Login required', nextStep: loginHint } };
       let response;
       try {

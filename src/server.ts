@@ -28,14 +28,16 @@ const absolute = (value: unknown, origin: string): unknown => typeof value === '
 export function createServer(options: ApiOptions = {}) {
   const api = createApi(options);
   const server = new McpServer({ name: pkg.name, version: pkg.version }, { instructions });
-  const call = async (path: string, body: JsonObject | undefined, signal: AbortSignal, booking = false) => {
+  // `stay` marks a booking call: what the user asked for, shown when the API answer carries no stay of its own.
+  const call = async (path: string, body: JsonObject | undefined, signal: AbortSignal, stay?: JsonObject) => {
     const result = await api.request(path, body, signal);
     const data = result.error || result.data;
-    if (booking) {
+    if (stay) {
       // Older API versions answer site-relative links; the status page is shorter and safer to relay than Stripe's URL.
       for (const key of ['paymentUrl', 'orderUrl', 'statusUrl']) if (key in data) data[key] = absolute(data[key], api.origin);
       if (!result.error) {
         data.paymentUrl = data.statusUrl || data.paymentUrl;
+        data.stay ??= stay;
         data.nextStep = nextStep;
       }
     }
@@ -60,6 +62,10 @@ export function createServer(options: ApiOptions = {}) {
   server.registerTool('create_booking', {
     title: 'Create booking payment link', description: 'Create or resume a booking for a user-selected rate from get_rates. Provide guests and contact details. Returns amount, currency, stay, accepted terms and a private paymentUrl. Show amount, currency, stay and terms and ask for confirmation before sharing paymentUrl exactly. Nothing is charged until the user pays on the payment page; never ask for card details. Same user and stay resumes the same order; paid stays return 409 with orderUrl. Does not cancel or modify bookings: for that the user emails info@fortrip.ai with orderUrl.',
     inputSchema: bookingSchema, annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  }, (input, ctx) => call('/api/huizhi/bookings', input, ctx.mcpReq.signal, true));
+  }, (input, ctx) => call('/api/huizhi/bookings', input, ctx.mcpReq.signal, {
+    hotelId: input.hotelId, hotelName: null, roomName: null, checkIn: input.checkIn, checkOut: input.checkOut,
+    nights: (Date.parse(input.checkOut) - Date.parse(input.checkIn)) / 86_400_000,
+    rooms: input.rooms, adultsPerRoom: input.adults, childrenAgesPerRoom: input.childrenAges,
+  }));
   return server;
 }

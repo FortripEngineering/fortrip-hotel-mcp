@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer as createHttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
@@ -100,11 +100,13 @@ test('booking returns the absolute status page as paymentUrl for old and new API
     absolute: { agentOrderId: 'A1', amount: 100, currency: 'USD', terms: { boardCode: 'BB', boardCount: 1 }, paymentUrl: 'https://fortrip.ai/booking-status?session_id=cs_test_a1', statusUrl: 'https://fortrip.ai/booking-status?session_id=cs_test_a1', orderUrl: 'https://fortrip.ai/orders/A1', stay },
     // No Checkout Session: there is no status page, so the Stripe URL stays.
     noSession: { agentOrderId: 'A1', amount: 100, currency: 'USD', terms: null, paymentUrl: 'https://checkout.stripe.com/c/pay/cs_test_a1#fragment', orderUrl: '/orders/A1' },
+    // A site-relative paymentUrl is made absolute; a protocol-relative URL is already absolute and stays as is.
+    relativePayment: { agentOrderId: 'A1', amount: 100, currency: 'USD', terms: null, paymentUrl: '/booking-status?session_id=cs_test_a1', orderUrl: '//orders.example.com/A1' },
   };
   let mode = 'relative';
   const requests: Request[] = [];
   const client = await connect(t, { env: { FORTRIP_TOKEN: 'fth_test' }, fetchImpl: async (url, options) => { requests.push(new Request(url, options)); return success(structuredClone(answers[mode])); } });
-  const book = async () => z.record(z.string(), z.unknown()).parse((await client.callTool({ name: 'create_booking', arguments: bookingArgs })).structuredContent);
+  const book = async (args: JsonObject = bookingArgs) => z.record(z.string(), z.unknown()).parse((await client.callTool({ name: 'create_booking', arguments: args })).structuredContent);
 
   const relative = await book();
   assert.equal(requests[0].url, 'https://fortrip.ai/api/huizhi/bookings');
@@ -114,6 +116,8 @@ test('booking returns the absolute status page as paymentUrl for old and new API
   assert.match(String(relative.nextStep), /confirm/);
   assert.match(String(relative.nextStep), /stay/);
   assert.deepEqual(relative.terms, { boardCode: 'BB', boardCount: 1 });
+  // The older API answers no stay: it is built from the request so the user can still be shown one.
+  assert.deepEqual(relative.stay, { hotelId: 123, hotelName: null, roomName: null, checkIn: '2099-01-01', checkOut: '2099-01-03', nights: 2, rooms: 1, adultsPerRoom: 1, childrenAgesPerRoom: [] });
 
   mode = 'absolute';
   const absolute = await book();
@@ -126,6 +130,13 @@ test('booking returns the absolute status page as paymentUrl for old and new API
   assert.equal(fallback.paymentUrl, 'https://checkout.stripe.com/c/pay/cs_test_a1#fragment');
   assert.equal(fallback.orderUrl, 'https://fortrip.ai/orders/A1');
   assert.equal('statusUrl' in fallback, false);
+  const family = await book({ ...bookingArgs, checkOut: '2099-01-06', rooms: 2, adults: 2, childrenAges: [5], guests: [{ firstName: 'Test', lastName: 'Guest', roomNo: 1 }, { firstName: 'Other', lastName: 'Guest', roomNo: 2 }] });
+  assert.deepEqual(family.stay, { hotelId: 123, hotelName: null, roomName: null, checkIn: '2099-01-01', checkOut: '2099-01-06', nights: 5, rooms: 2, adultsPerRoom: 2, childrenAgesPerRoom: [5] });
+
+  mode = 'relativePayment';
+  const relativePayment = await book();
+  assert.equal(relativePayment.paymentUrl, 'https://fortrip.ai/booking-status?session_id=cs_test_a1');
+  assert.equal(relativePayment.orderUrl, '//orders.example.com/A1');
 });
 
 test('booking errors pass reason through, absolutize 409 links and carry no payment step', async t => {
@@ -222,12 +233,29 @@ test('login hints address the user and never ask for a token', async t => {
   const fromEnv = await connect(t, { env: { XDG_CONFIG_HOME: dir, FORTRIP_TOKEN: 'fth_env' }, fetchImpl });
   const rejected = errorBody(await fromEnv.callTool({ name: 'get_hotel', arguments: { hotelId: 1 } }));
   assert.match(String(rejected.nextStep), /FORTRIP_TOKEN set for this server was rejected/);
+  assert.match(String(rejected.nextStep), /must remove it .*then ask the user to run `npx -y fortrip login`/);
   assert.match(String(rejected.nextStep), /Never ask the user to paste a token/);
 
   await writeFile(file, '{not json');
   const unreadable = errorBody(await saved.callTool({ name: 'get_hotel', arguments: { hotelId: 1 } }));
   assert.match(String(unreadable.error), /Cannot read the saved Fortrip login/);
   assertLoginHint(unreadable.nextStep);
+});
+
+test('an unreadable credentials file gets a permissions hint, not a sign-in hint', { skip: process.getuid?.() === 0 && 'root reads any file' }, async t => {
+  const dir = await temp(t);
+  await mkdir(join(dir, 'fortrip'));
+  const file = join(dir, 'fortrip/credentials.json');
+  await writeFile(file, JSON.stringify({ tokens: { 'https://fortrip.ai': { accessToken: 'fth_saved' } } }));
+  await chmod(file, 0o000);
+  let fetched = 0;
+  const client = await connect(t, { env: { XDG_CONFIG_HOME: dir }, fetchImpl: async () => { fetched++; return success({}); } });
+  const denied = errorBody(await client.callTool({ name: 'get_hotel', arguments: { hotelId: 1 } }));
+  assert.match(String(denied.error), /Cannot read the saved Fortrip login \(EACCES\)/);
+  assert.match(String(denied.nextStep), /file permissions, so signing in again will not help/);
+  assert.match(String(denied.nextStep), /--user "\$\(id -u\):\$\(id -g\)"/);
+  assert.match(String(denied.nextStep), /Never ask the user to paste a token/);
+  assert.equal(fetched, 0);
 });
 
 test('invalid FORTRIP_API_URL is a tool error, not a failed initialize', async t => {
@@ -279,6 +307,41 @@ test('stdio process exits promptly on SIGTERM during a pending API request', asy
   child.kill('SIGTERM');
   const [code] = await Promise.race([exited, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('still running 5 s after SIGTERM')), 5_000).unref())]);
   assert.equal(code, 0);
+});
+
+test('SIGTERM does not truncate a large response that is still being written', async t => {
+  const description = 'x'.repeat(2_000_000);
+  const api = createHttpServer((_req, res) => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ success: true, data: { hotelId: 1, description } })); });
+  api.listen(0, '127.0.0.1');
+  await once(api, 'listening');
+  t.after(() => { api.closeAllConnections(); api.close(); });
+  const config = await temp(t);
+  const child = spawn(process.execPath, ['dist/index.js'], { env: { PATH: process.env.PATH, XDG_CONFIG_HOME: config, FORTRIP_TOKEN: 'fth_test', FORTRIP_API_URL: `http://127.0.0.1:${(api.address() as AddressInfo).port}` }, stdio: ['pipe', 'pipe', 'pipe'] });
+  t.after(() => { child.kill('SIGKILL'); });
+  let output = '';
+  let signalled = false;
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', (chunk: string) => {
+    output += chunk;
+    // As soon as the tool result starts arriving, stop reading so the rest stays queued in the
+    // child's stdout, signal it, and read on a little later.
+    if (!signalled && output.indexOf('\n') !== -1 && output.length > output.indexOf('\n') + 1) {
+      signalled = true;
+      child.stdout.pause();
+      child.kill('SIGTERM');
+      setTimeout(() => child.stdout.resume(), 300);
+    }
+  });
+  const done = Promise.all([once(child, 'exit'), once(child.stdout, 'end')]);
+  const send = (message: JsonObject) => child.stdin.write(JSON.stringify({ jsonrpc: '2.0', ...message }) + '\n');
+  send({ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1.0.0' } } });
+  send({ method: 'notifications/initialized' });
+  send({ id: 2, method: 'tools/call', params: { name: 'get_hotel', arguments: { hotelId: 1 } } });
+  const [[code]] = await Promise.race([done, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('still running 10 s after SIGTERM')), 10_000).unref())]);
+  assert.equal(signalled, true);
+  assert.equal(code, 0);
+  const result = z.object({ id: z.literal(2), result: z.object({ structuredContent: z.object({ description: z.string() }) }) }).parse(JSON.parse(output.trim().split('\n')[1]));
+  assert.equal(result.result.structuredContent.description.length, description.length);
 });
 
 test('API failures stay tool errors; retry-after is preserved and transport errors hide secrets', async t => {
