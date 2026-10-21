@@ -1,6 +1,7 @@
 {
   "name": "fortrip-mcp",
   "version": "0.1.1",
+  "mcpName": "io.github.FortripEngineering/fortrip",
   "description": "Fortrip hotel search, live rates and booking payment links over MCP stdio",
   "type": "module",
   "license": "MIT",
@@ -22,12 +23,14 @@
     "guides",
     "LICENSE",
     "README.md",
-    "docs",
-    "examples"
+    "docs"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/FortripEngineering/fortrip-mcp.git"
+  },
+  "publishConfig": {
+    "provenance": true
   },
   "bugs": {
     "url": "https://github.com/FortripEngineering/fortrip-mcp/issues"
