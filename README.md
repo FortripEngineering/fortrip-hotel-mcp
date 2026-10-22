@@ -6,58 +6,55 @@ It uses stdio and works with MCP clients that launch local commands.
 
 ## Quick start
 
-Requires Node.js 22 or newer, npm, and a Fortrip account for hotel API calls.
+Requires Node.js 22 or newer and a Fortrip account for hotel API calls.
+
+Sign in once in a terminal:
 
 ```sh
-git clone https://github.com/FortripEngineering/fortrip-mcp.git
-cd fortrip-mcp
-npm ci
-npm run build
 npx -y fortrip login
 ```
 
 The login command belongs to the separately maintained
 [Fortrip CLI](https://github.com/FortripEngineering/fortrip-cli).
-Run it once in a terminal and approve the sign-in in your browser. This server
-reads the saved credentials on each call; it does not modify them. Never paste
-a token into a chat or an MCP configuration file.
+Approve the sign-in in your browser. This server reads the saved credentials
+on each call; it does not modify them. Never paste a token into a chat or an
+MCP configuration file.
 
-Configure your MCP client using the **absolute** path to this checkout:
+Then add the server to your MCP client. It runs from npm through `npx`:
 
 ```json
 {
   "mcpServers": {
     "fortrip-local": {
-      "command": "node",
-      "args": ["/absolute/path/to/fortrip-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "fortrip-mcp"]
     }
   }
 }
 ```
 
 Use this entry in Claude Desktop's MCP configuration or Cursor's `.cursor/mcp.json`.
-If your desktop app cannot find `node`, use its absolute executable path.
-The MCP process waits for JSON-RPC on stdin; running `npm start` in a terminal
+If your desktop app cannot find `npx`, use its absolute executable path.
+The MCP process waits for JSON-RPC on stdin; running it in a terminal
 alone does not open a chat interface.
 
 For Codex, add this to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.fortrip-local]
-command = "node"
-args = ["/absolute/path/to/fortrip-mcp/dist/index.js"]
+command = "npx"
+args = ["-y", "fortrip-mcp"]
 ```
 
 For Claude Code:
 
 ```sh
-claude mcp add --transport stdio fortrip-local -- node /absolute/path/to/fortrip-mcp/dist/index.js
+claude mcp add --transport stdio fortrip-local -- npx -y fortrip-mcp
 ```
 
-This repository is runnable from source. An npm release of `fortrip-mcp`
-has not been published; use the checkout instructions above. The first npm
-release will be published manually; publishing from CI with npm provenance
-can come later.
+`npx -y fortrip-mcp` runs the latest release on npm. To run a checkout
+instead, build it as in [Development and support](#development-and-support)
+and use `node /absolute/path/to/fortrip-mcp/dist/index.js` as the command.
 
 ## Tools
 
@@ -161,6 +158,8 @@ still work, while hotel API calls explain how to sign in.
 ## Development and support
 
 ```sh
+git clone https://github.com/FortripEngineering/fortrip-mcp.git
+cd fortrip-mcp
 npm ci
 npm run build
 npm test
