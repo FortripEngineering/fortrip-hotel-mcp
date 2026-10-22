@@ -1,6 +1,6 @@
 {
   "name": "fortrip-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "mcpName": "io.github.FortripEngineering/fortrip",
   "description": "Fortrip hotel search, live rates and booking payment links over MCP stdio",
   "type": "module",
