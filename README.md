@@ -61,4 +61,4 @@ If you used `fortrip-mcp`, replace `["-y", "fortrip-mcp"]` with
 `["-y", "fortrip", "mcp"]` in your client's configuration.
 
 More: the [CLI and MCP server documentation](https://github.com/FortripEngineering/fortrip/tree/main/packages/cli#readme)
-and [fortrip.ai/agents](https://fortrip.ai/agents).
+and [fortrip.ai/agents/mcp](https://fortrip.ai/agents/mcp).
