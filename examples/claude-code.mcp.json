@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "fortrip": {
-      "type": "http",
-      "url": "https://fortrip.ai/api/mcp"
-    }
-  }
-}

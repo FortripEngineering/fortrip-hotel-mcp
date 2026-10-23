@@ -1,8 +1,0 @@
-node_modules/
-*.tgz
-.env
-.env.*
-credentials.json
-.DS_Store
-dist/
-.test-build/
